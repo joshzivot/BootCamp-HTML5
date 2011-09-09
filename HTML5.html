@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
 	<head>
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=0" />
+
 		<script type="text/javascript" src="jquery-1.6.2.min.js"></script>
         
         <style type="text/css">
@@ -8,10 +11,12 @@
             body {
                 font-family: Verdana, Arial, sans-serif;
                 background-color: #EEE;
+				margin: 0;
             }
             
             #main {
-                width: 500px;
+                width: 100%;
+				max-width: 768px;
                 margin: 0 auto;
                 -webkit-box-shadow: #666 2px 15px 15px;
                 -moz-box-shadow: #666 2px 15px 15px;
@@ -24,8 +29,6 @@
                 color: white;
                 float: left;
                 width: 100%;
-                -moz-border-radius: 15px 15px 0 0;
-                -webkit-border-radius: 15px 15px 0 0;
             }
             
             .title {
@@ -46,6 +49,8 @@
                 border: outset #999 2px;
                 cursor: pointer;
                 display: inline-block;
+				-moz-border-radius: 10px;
+                -webkit-border-radius: 10px;
             }
             
             #head .refresh:active {
@@ -60,13 +65,20 @@
             }
             
             #tweet-list {
-                width: 500px;
                 list-style: none;
                 margin: 0;
                 padding: 0;
                 position: relative;
+                -webkit-animation: slide 1s 1 ease;
+                -webkit-animation-fill-mode: forwards;
+                -webkit-animation-play-state: paused;
             }
-        
+            
+            @-webkit-keyframes slide {
+                to {
+                    top: 0px;
+                }
+			}
             .tweet {
                 background-repeat: no-repeat;
                 background-position: 10px 10px;
@@ -120,11 +132,11 @@
         var newestTweet = null;
         var animate = false;
         
-        $(document).ready(function() {
-                          
+        $(document).ready(function() {            
 
-        
+			// Show initial tweets
             displayTweets();
+			// Refresh tweets every 30 seconds
             setInterval( "displayTweets()", 30000 );
                           
         });
@@ -142,7 +154,18 @@
                     var isNew = true;
                     var newTweets = 0;
 
-                    var htmlText = "<ul id='tweet-list'>";
+                          
+                    for (i = 0; i < data.results.length; i++) {
+                        if (data.results[i].text == newestTweet) {
+                          isNew = false;
+                        } else if ( isNew ) {
+                          newTweets++;
+                        }
+                    }
+                          
+                    var topIncrement = -120 * newTweets;
+                    
+                    var htmlText = "<ul id='tweet-list' style='top:"+topIncrement+"px'>";
                           
                     $("#tweet-list > li").removeClass(".new");
                           
@@ -162,11 +185,7 @@
                         
                         htmlText += "<li class='tweet "; 
                         
-                        if (data.results[i].text == newestTweet) {
-                            isNew = false;
-                        } else if ( isNew ) {
-                            newTweets++;
-                        }
+                        
                           
                         htmlText += bgClass+"' style='background-image: url("+icon+")'><span class='username'><a href='"+userURL+"'>"+username+"</a></span>: "+tweet+" <div class='time'>"+postTime+" GMT</div> </li>";
                     }
@@ -176,26 +195,24 @@
                           
                     htmlText += "</ul>";
                          
-                    var topIncrement = -120 * newTweets;
+                    
                     
                     $("#twitter").html( htmlText );
                     
                     if (animate) {
-                          $("#tweet-list").css('top', parseFloat(topIncrement + "px"));  
-                          $("#tweet-list").animate({"top": "0px"}, "slow");
+                        document.getElementById("tweet-list").style.webkitAnimationPlayState = "running";
                     } else {
                           $("#twitter").fadeIn("slow");
                           animate = true;
                     }
+                    $("#tweet-list").css('top', '0');
                           
                 });
-            
-                      
         }
         
         $(".refresh").click(function () { 
+			// Refresh tweets when refresh button is clicked
             displayTweets();
-            clearInterval();
         });
                 
                         
