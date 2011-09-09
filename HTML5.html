@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script type="text/javascript" src="jquery-1.6.2.min.js"></script>
+        
+        <style type="text/css">
+            
+            body {
+                font-family: Verdana, Arial, sans-serif;
+                background-color: #EEE;
+            }
+            
+            #main {
+                width: 500px;
+                margin: 0 auto;
+                -webkit-box-shadow: #666 2px 15px 15px;
+                -moz-box-shadow: #666 2px 15px 15px;
+            }
+            
+            #head {
+                padding: 20px 0;
+                text-align: center;
+                background-color: #005;
+                color: white;
+                float: left;
+                width: 100%;
+                -moz-border-radius: 15px 15px 0 0;
+                -webkit-border-radius: 15px 15px 0 0;
+            }
+            
+            .title {
+                font-weight: bold;
+                font-size: 20px;
+                float: left;
+                padding-left: 20px;
+            }
+            
+            #head .refresh {
+                float: right;
+                margin-right: 20px;
+                padding: 5px 10px;
+                background-color: #eee;
+                color: black;
+                font-size: 13px;
+                position: relative;
+                border: outset #999 2px;
+                cursor: pointer;
+                display: inline-block;
+            }
+            
+            #head .refresh:active {
+                border-style: inset;
+                background-color: #666;
+            }
+            
+            #twitter {
+                clear: both;
+                display: none;
+                overflow: hidden;
+            }
+            
+            #tweet-list {
+                width: 500px;
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                position: relative;
+            }
+        
+            .tweet {
+                background-repeat: no-repeat;
+                background-position: 10px 10px;
+                padding: 10px 10px 10px 70px;
+                font-size: 13px;
+                height: 100px;
+            }
+            
+            .tweet.new {
+                display: none;
+            }
+            
+            .username a {
+                color: #D00;
+                font-weight: bold;
+                text-decoration: none;
+            }
+            
+            .tweet.even {
+                background-color: #fff;
+            }
+            .tweet.odd {
+                background-color: #f5f5f5;
+            }
+            
+            .tweet .time {
+                font-size: 11px;
+                color: #999;
+                margin-top: 5px;
+            }
+            
+            
+        </style>
+        
+	</head>
+
+	<body>
+        <div id="main">	
+            <div id="head">
+                <span class="title">Justin Bieber</span>
+                <div class="refresh">Refresh</div>
+            </div>	
+            
+            <div id="twitter">
+            </div>
+        </div>
+	</body>
+	
+	<script type="text/javascript">
+	
+        var newestTweet = null;
+        var animate = false;
+        
+        $(document).ready(function() {
+                          
+
+        
+            displayTweets();
+            setInterval( "displayTweets()", 30000 );
+                          
+        });
+                          
+        function displayTweets() {
+            var query = "%23bieber";
+            var searchURL = "http://search.twitter.com/search.json?callback=?&q="+query;
+            
+            var invocation = new XMLHttpRequest();
+            
+                $.getJSON(searchURL, function(data) {
+
+                    var username, bgClass, tweet, postTime, icon, userURL;
+                          
+                    var isNew = true;
+                    var newTweets = 0;
+
+                    var htmlText = "<ul id='tweet-list'>";
+                          
+                    $("#tweet-list > li").removeClass(".new");
+                          
+                    for (i = 0; i < data.results.length; i++) {
+                          
+                        if (i % 2) {
+                            bgClass= "even";
+                        } else {
+                            bgClass= "odd";
+                        }
+
+                        username = data.results[i].from_user;
+                        tweet = data.results[i].text;
+                        postTime = data.results[i].created_at;
+                        icon = data.results[i].profile_image_url;
+                        userURL = "http://twitter.com/"+username;
+                        
+                        htmlText += "<li class='tweet "; 
+                        
+                        if (data.results[i].text == newestTweet) {
+                            isNew = false;
+                        } else if ( isNew ) {
+                            newTweets++;
+                        }
+                          
+                        htmlText += bgClass+"' style='background-image: url("+icon+")'><span class='username'><a href='"+userURL+"'>"+username+"</a></span>: "+tweet+" <div class='time'>"+postTime+" GMT</div> </li>";
+                    }
+                    
+                          
+                    newestTweet = data.results[0].text;
+                          
+                    htmlText += "</ul>";
+                         
+                    var topIncrement = -120 * newTweets;
+                    
+                    $("#twitter").html( htmlText );
+                    
+                    if (animate) {
+                          $("#tweet-list").css('top', parseFloat(topIncrement + "px"));  
+                          $("#tweet-list").animate({"top": "0px"}, "slow");
+                    } else {
+                          $("#twitter").fadeIn("slow");
+                          animate = true;
+                    }
+                          
+                });
+            
+                      
+        }
+        
+        $(".refresh").click(function () { 
+            displayTweets();
+            clearInterval();
+        });
+                
+                        
+	</script>
+
+</html>
+
+
