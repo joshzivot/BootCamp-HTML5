@@ -163,6 +163,9 @@
 
         function displayTweets() {
             var query = $("#search-field").val();
+
+			if (!query || query == "") return;
+
             var searchURL = "http://search.twitter.com/search.json?callback=?&q=" + encodeURIComponent(query);
             
             var invocation = new XMLHttpRequest();
@@ -176,7 +179,7 @@
 
                     animate = false;      
                     for (i = 0; i < data.results.length; i++) {
-                        if (data.results[i].text == newestTweet) {
+                        if (data.results[i].id == newestTweet) {
                           isNew = false;
 						  animate = true;
                         } else if ( isNew ) {
@@ -184,6 +187,7 @@
                         }
                     }
                           
+					if (!data.results) return;
 					if (data.results.length > 0) {
 						$("#info").hide();
 					} else {
@@ -215,7 +219,7 @@
                     }
                     
                           
-                    newestTweet = data.results[0].text;
+                    newestTweet = data.results[0].id;
                           
                     htmlText += "</ul>";
                          
