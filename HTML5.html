@@ -162,6 +162,8 @@
         });
 
         function displayTweets() {
+			$("#info").html("Loading...");
+
             var query = $("#search-field").val();
 
 			if (!query || query == "") return;
@@ -192,6 +194,7 @@
 						$("#info").hide();
 					} else {
 						$("#info").show().html("No Results");
+						$("#twitter").html("");
 						return;
 					}
 
@@ -243,6 +246,12 @@
 			this.innerHTML = "Refresh";
         });
                 
+		$("#search-field").keyup(function (e) {
+			if (e.keyCode == 13) {
+				displayTweets();
+				$(".refresh").html("Refresh");
+			}
+		});
                         
 	</script>
 
