@@ -7,7 +7,7 @@
 		<script type="text/javascript" src="jquery-1.6.2.min.js"></script>
         
         <style type="text/css">
-            
+
             body {
                 font-family: Verdana, Arial, sans-serif;
                 background-color: #EEE;
@@ -27,10 +27,21 @@
                 text-align: center;
                 background-color: #005;
                 color: white;
-                float: left;
                 width: 100%;
+				overflow: auto;
             }
-            
+
+			#search-field {
+				border-radius: 20px;
+				padding: 5px 15px;
+				width: 500px;
+			 	margin-left: 20px;
+			}
+
+			#search-field:focus {
+				outline: none;
+			}
+
             .title {
                 font-weight: bold;
                 font-size: 20px;
@@ -39,8 +50,10 @@
             }
             
             #head .refresh {
+				width: 80px;
                 float: right;
                 margin-right: 20px;
+				margin-top: 7px;
                 padding: 5px 10px;
                 background-color: #eee;
                 color: black;
@@ -57,11 +70,17 @@
                 border-style: inset;
                 background-color: #666;
             }
-            
+
+			#info {
+				text-align: center;
+				padding: 20px 0;
+			}
+
             #twitter {
                 clear: both;
                 display: none;
                 overflow: hidden;
+				min-height: 100%;
             }
             
             #tweet-list {
@@ -97,10 +116,10 @@
                 text-decoration: none;
             }
             
-            .tweet.even {
+            .tweet:nth-child(odd) {
                 background-color: #fff;
             }
-            .tweet.odd {
+            .tweet:nth-child(even) {
                 background-color: #f5f5f5;
             }
             
@@ -118,10 +137,13 @@
 	<body>
         <div id="main">	
             <div id="head">
-                <span class="title">Justin Bieber</span>
-                <div class="refresh">Refresh</div>
+                <input type="text" id="search-field" class="title" />
+                <div class="refresh">Search</div>
             </div>	
             
+			<div id="info">
+				Enter a Twitter search query above
+			</div>
             <div id="twitter">
             </div>
         </div>
@@ -134,16 +156,14 @@
         
         $(document).ready(function() {            
 
-			// Show initial tweets
-            displayTweets();
 			// Refresh tweets every 30 seconds
             setInterval( "displayTweets()", 30000 );
                           
         });
-                          
+
         function displayTweets() {
-            var query = "%23bieber";
-            var searchURL = "http://search.twitter.com/search.json?callback=?&q="+query;
+            var query = $("#search-field").val();
+            var searchURL = "http://search.twitter.com/search.json?callback=?&q=" + encodeURIComponent(query);
             
             var invocation = new XMLHttpRequest();
             
@@ -154,29 +174,34 @@
                     var isNew = true;
                     var newTweets = 0;
 
-                          
+                    animate = false;      
                     for (i = 0; i < data.results.length; i++) {
                         if (data.results[i].text == newestTweet) {
                           isNew = false;
+						  animate = true;
                         } else if ( isNew ) {
                           newTweets++;
                         }
                     }
                           
+					if (data.results.length > 0) {
+						$("#info").hide();
+					} else {
+						$("#info").show().html("No Results");
+						return;
+					}
+
                     var topIncrement = -120 * newTweets;
-                    
-                    var htmlText = "<ul id='tweet-list' style='top:"+topIncrement+"px'>";
+                   	
+					if (!animate) topIncrement = 0;
+					
+
+					var htmlText = "<ul id='tweet-list' style='top:"+topIncrement+"px'>";
                           
                     $("#tweet-list > li").removeClass(".new");
                           
                     for (i = 0; i < data.results.length; i++) {
                           
-                        if (i % 2) {
-                            bgClass= "even";
-                        } else {
-                            bgClass= "odd";
-                        }
-
                         username = data.results[i].from_user;
                         tweet = data.results[i].text;
                         postTime = data.results[i].created_at;
@@ -184,7 +209,6 @@
                         userURL = "http://twitter.com/"+username;
                         
                         htmlText += "<li class='tweet "; 
-                        
                         
                           
                         htmlText += bgClass+"' style='background-image: url("+icon+")'><span class='username'><a href='"+userURL+"'>"+username+"</a></span>: "+tweet+" <div class='time'>"+postTime+" GMT</div> </li>";
@@ -202,8 +226,7 @@
                     if (animate) {
                         document.getElementById("tweet-list").style.webkitAnimationPlayState = "running";
                     } else {
-                          $("#twitter").fadeIn("slow");
-                          animate = true;
+                          $("#twitter").hide().fadeIn("slow");
                     }
                     $("#tweet-list").css('top', '0');
                           
@@ -213,6 +236,7 @@
         $(".refresh").click(function () { 
 			// Refresh tweets when refresh button is clicked
             displayTweets();
+			this.innerHTML = "Refresh";
         });
                 
                         
