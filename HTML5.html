@@ -42,7 +42,7 @@
 			#search-field {
 				border-radius: 20px;
 				padding: 5px 15px;
-				width: 50%;
+				width: 40%;
 			 	margin-left: 20px;
 			}
 
@@ -57,7 +57,7 @@
                 padding-left: 20px;
             }
             
-            #head .refresh {
+            #search-button {
 				width: 70px;
                 float: right;
                 margin-right: 20px;
@@ -74,10 +74,16 @@
                 -webkit-border-radius: 10px;
             }
             
-            #head .refresh:active {
+            #search-button:active {
                 border-style: inset;
                 background-color: #666;
             }
+
+			#search-button.disabled {
+				border-style: outset;
+				background-color: #ddd;
+				color: #999;
+			}
 
 			#info {
 				text-align: center;
@@ -86,9 +92,10 @@
 
             #twitter {
                 clear: both;
-                display: none;
                 overflow: hidden;
 				min-height: 100%;
+                -webkit-animation: 1s 1 ease;
+                -webkit-animation-fill-mode: forwards;
             }
             
             #tweet-list {
@@ -96,6 +103,7 @@
                 margin: 0;
                 padding: 0;
                 position: relative;
+				opacity: inherit;
                 -webkit-animation: slide 1s 1 ease;
                 -webkit-animation-fill-mode: forwards;
                 -webkit-animation-play-state: paused;
@@ -106,16 +114,22 @@
                     top: 0px;
                 }
 			}
+
+			@-webkit-keyframes fade {
+				from {
+					opacity:0;
+				}
+				to {
+					opacity:1;
+				}
+			}
+
             .tweet {
                 background-repeat: no-repeat;
                 background-position: 10px 10px;
                 padding: 10px 10px 10px 70px;
                 font-size: 13px;
                 height: 100px;
-            }
-            
-            .tweet.new {
-                display: none;
             }
             
             .username a {
@@ -146,7 +160,7 @@
         <div id="main">	
             <div id="head">
                 <input type="text" id="search-field" class="title" />
-                <div class="refresh">Search</div>
+                <div id="search-button">Search</div>
             </div>	
             
 			<div id="info">
@@ -161,19 +175,10 @@
 	
         var newestTweet = null;
         var animate = false;
+		var searchEnabled = true;
+		var query = null;
         
-        $(document).ready(function() {            
-
-			// Refresh tweets every 30 seconds
-            setInterval( "displayTweets()", 30000 );
-                          
-        });
-
         function displayTweets() {
-
-            var query = $("#search-field").val();
-
-			if (!query || query == "") return;
 
             var searchURL = "http://search.twitter.com/search.json?callback=?&q=" + encodeURIComponent(query);
             
@@ -181,10 +186,20 @@
             
                 $.getJSON(searchURL, function(data) {
 
+					enableSearch();
+
                     var username, bgClass, tweet, postTime, icon, userURL;
                           
                     var isNew = true;
                     var newTweets = 0;
+
+					if (data.results && data.results.length > 0) {
+						$("#info").hide();
+					} else {
+						$("#info").show().html("No Results");
+						$("#twitter").html("");
+						return;
+					}
 
                     animate = false;      
                     for (i = 0; i < data.results.length; i++) {
@@ -196,23 +211,12 @@
                         }
                     }
                           
-					if (!data.results) return;
-					if (data.results.length > 0) {
-						$("#info").hide();
-					} else {
-						$("#info").show().html("No Results");
-						$("#twitter").html("");
-						return;
-					}
-
                     var topIncrement = -120 * newTweets;
                    	
 					if (!animate) topIncrement = 0;
 					
 
 					var htmlText = "<ul id='tweet-list' style='top:"+topIncrement+"px'>";
-                          
-                    $("#tweet-list > li").removeClass(".new");
                           
                     for (i = 0; i < data.results.length; i++) {
                           
@@ -222,10 +226,7 @@
                         icon = data.results[i].profile_image_url;
                         userURL = "http://twitter.com/"+username;
                         
-                        htmlText += "<li class='tweet "; 
-                        
-                          
-                        htmlText += bgClass+"' style='background-image: url("+icon+")'><span class='username'><a href='"+userURL+"'>"+username+"</a></span>: "+tweet+" <div class='time'>"+postTime+" GMT</div> </li>";
+                        htmlText += "<li class='tweet' style='background-image: url("+icon+")'><span class='username'><a href='"+userURL+"'>"+username+"</a></span>: "+tweet+" <div class='time'>"+postTime+" GMT</div> </li>";
                     }
                     
                           
@@ -233,14 +234,15 @@
                           
                     htmlText += "</ul>";
                          
-                    
-                    
-                    $("#twitter").html( htmlText );
+                    $("#twitter")[0].innerHTML = htmlText;
                     
                     if (animate) {
                         document.getElementById("tweet-list").style.webkitAnimationPlayState = "running";
                     } else {
-                          $("#twitter").hide().fadeIn("slow");
+						  $("#twitter")[0].style.webkitAnimationName = "fade";
+						  setTimeout( function() {
+							  $("#twitter")[0].style.webkitAnimationName = "";
+						  }, 1000);
                     }
                     $("#tweet-list").css('top', '0');
                           
@@ -248,17 +250,33 @@
         }
 	
 		function searchPressed() {
+            query = $("#search-field").val();
 			displayTweets();
-			$(".refresh").html("Refresh");
+			$("#search-button").html("Refresh");
 			$("#info").html("Loading...");
+			disableSearch();
+		}
+
+		function disableSearch() {
+			$("#search-button").addClass('disabled');	
+			searchEnabled = false;
+		}
+
+		function enableSearch() {
+			setTimeout(function() {
+				$("#search-button").removeClass('disabled');	
+				searchEnabled = true;
+			}, 1000);
 		}
         
-        $(".refresh").click(function () { 
-			searchPressed();
+        $("#search-button").click(function () { 
+			if (searchEnabled) {
+				searchPressed();
+			}
         });
                 
 		$("#search-field").keyup(function (e) {
-			if (e.keyCode == 13) {
+			if (e.keyCode == 13 && searchEnabled) {
 				searchPressed();
 			}
 		});
